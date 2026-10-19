@@ -1,0 +1,44 @@
+name: Build ESP32-C3 Firmware (PlatformIO)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # 수동 실행 버튼 활성화
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. 저장소 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: 2. 파이썬 환경 설정
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 3. PlatformIO 캐시 설정 (빌드 속도 향상)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio
+          key: ${{ runner.os }}-pio-${{ hashFiles('**/platformio.ini') }}
+
+      - name: 4. PlatformIO Core 설치
+        run: pip install --upgrade platformio
+
+      - name: 5. ESP32-C3 펌웨어 컴파일
+        run: pio run
+
+      - name: 6. 컴파일된 펌웨어(.bin) 업로드 (Artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32c3-throw-meter-firmware
+          path: |
+            .pio/build/esp32-c3-devkitm-1/firmware.bin
+            .pio/build/esp32-c3-devkitm-1/partitions.bin
+            .pio/build/esp32-c3-devkitm-1/bootloader.bin
